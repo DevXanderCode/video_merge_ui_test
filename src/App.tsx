@@ -1,4 +1,4 @@
-import { useRef } from "react";
+import { useRef, useEffect, useState } from "react";
 import "./App.css";
 import callIcon from "./assets/call.png";
 import manImg from "./assets/man.jpg";
@@ -8,53 +8,67 @@ import foregroundVideo from "./assets/foreground.mp4";
 import backgroundVideo from "./assets/background.mp4";
 
 function App() {
-  // Get the video elements and the canvas
-  const video1 = useRef<HTMLVideoElement>(null);
-  const video2 = useRef<HTMLVideoElement>(null);
-  const canvas = useRef<HTMLCanvasElement>(null);
+  const [recording, setRecording] = useState(false);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const downloadButton = useRef<HTMLAnchorElement>(null);
 
-  const handleDownloadClick = async () => {
-    console.log("function called");
-    // Get the canvas context and draw the videos onto the canvas
-    const ctx = canvas.current?.getContext("2d");
+  const startRecording = () => {
+    const canvas = document.createElement("canvas");
+    const div = document.getElementById("my-div")!;
+    canvas.width = div.offsetWidth;
+    canvas.height = div.offsetHeight;
+    const context = canvas.getContext("2d");
 
-    if (ctx && video1.current && video2.current && canvas.current) {
-      ctx.drawImage(
-        video1.current,
-        0,
-        0,
-        canvas.current.width / 2,
-        canvas.current.height
-      );
-      ctx.drawImage(
-        video2.current,
-        canvas.current.width / 2,
-        0,
-        canvas.current.width / 2,
-        canvas.current.height
-      );
+    if (context) {
+      const mediaStream = canvas.captureStream();
+      const mediaRecorder = new MediaRecorder(mediaStream);
+      const chunks: BlobPart[] | undefined = [];
 
-      // Create a new video element with the canvas as the source
-      const newVideo = document.createElement("video");
-      newVideo.src = canvas.current.toDataURL("video/mp4");
+      mediaRecorder.ondataavailable = (event) => {
+        console.log("event data", event.data);
+        chunks.push(event.data);
+      };
 
-      // Add a download button to download the new video
-      const a = document.createElement("a");
-      a.href = newVideo.src;
-      a.download = "combined-video.mp4";
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
+      mediaRecorder.onstop = () => {
+        const videoBlob = new Blob(chunks, { type: "video/mp4" });
+        const videoURL = URL.createObjectURL(videoBlob);
+        // videoRef.current!.src = videoURL;
+
+        // Download video after a delay of 10 seconds
+
+        const downloadLink = document.createElement("a");
+        downloadLink.href = videoURL;
+        downloadLink.download = "my-screen-recording.mp4";
+        downloadLink.click();
+      };
+
+      mediaRecorder.start();
+      setTimeout(() => {
+        mediaRecorder.stop();
+      }, 5000); // Record for 5 seconds
     }
+  };
+
+  const drawCanvas = () => {
+    const canvas = canvasRef.current!;
+    const video = videoRef.current!;
+    const context = canvas.getContext("2d")!;
+    context.drawImage(video, 0, 0, canvas.width, canvas.height);
   };
 
   return (
     <div className="bg-white w-screen h-screen items-center justify-center flex">
-      <div className="flex relative  bg-slate-500  h-4/6 w-1/3 rounded-3xl">
+      <div
+        className="flex relative  bg-slate-500  h-4/6 w-1/3 rounded-3xl"
+        id="my-div"
+      >
         <div className="flex-1 w-1/3 h-full">
           <video
             id="video1"
-            ref={video1}
+            // ref={video1}
+            // ref={backgroundVideoRef}
+            ref={videoRef}
             height="100%"
             width="100%"
             className="w-full h-full object-cover rounded-3xl"
@@ -63,50 +77,37 @@ function App() {
             muted
             preload="auto"
             poster={manImg}
-            // crossOrigin="anonymous"
+            src={foregroundVideo}
+            crossOrigin="anonymous"
           >
-            <source
-              src={foregroundVideo}
-              // src={
-              //   "https://user-images.githubusercontent.com/18400051/220107713-53ae19b0-8065-4a6f-8752-b12780383ce1.mp4"
-              // }
-              type="video/mp4"
-            />
             Your browser does not support this video format.
           </video>
         </div>
-
         <div className="absolute top-4 right-4 border rounded-3xl">
           <div className="w-36">
             <video
               id="video2"
-              ref={video2}
+              // ref={video2}'
+              // ref={foregroundVideoRef}
               className="h-52 rounded-3xl w-36"
               autoPlay
               // loop
               muted
               preload="auto"
               poster={femaleImg}
-              // crossOrigin="anonymous"
+              src={backgroundVideo}
+              typeof="video/mp4"
+              crossOrigin="anonymous"
             >
-              <source
-                src={backgroundVideo}
-                // src={
-                //   "https://user-images.githubusercontent.com/18400051/220107983-60bc38bb-122d-424a-9019-372a76af09c7.mp4"
-                // }
-                type="video/mp4"
-              />
+              Your browser does not support this video format.
             </video>
           </div>
         </div>
-
         <div className="absolute bottom-10 right-0 left-0">
           <div className="flex items-center justify-center flex-wrap">
             <div
               className="rounded-full bg-purple-600 flex items-center justify-center w-12 h-12 mr-5 cursor-pointer"
-              onClick={() => {
-                // do some thing
-              }}
+              onClick={startRecording}
             >
               <img src={callIcon} className="w-6" />
             </div>
@@ -114,17 +115,28 @@ function App() {
               role={"button"}
               id="download-btn"
               className="rounded-full bg-red-600 flex items-center justify-center w-12 h-12 cursor-pointer"
-              onClick={handleDownloadClick}
+              // onClick={stopRecording}
             >
               <img src={callIcon} className="w-6" />
               {/* <img src={disconnectImg} className="w-6" /> */}
             </div>
           </div>
         </div>
-        <canvas ref={canvas} className="h-4/6 w-1/3 rounded-3xl hidden" />
+        <canvas ref={canvasRef} className="h-4/6 w-1/3 rounded-3xl hidden" />
+        {/* <a
+          // href="#"
+          ref={downloadButton}
+          style={{ display: "none" }}
+          // download="merged-video.webm"
+        >
+          Download merged video
+        </a> */}
       </div>
     </div>
   );
 }
 
 export default App;
+
+// notes: ===>  Check out using Iframe
+//==> check from recording
