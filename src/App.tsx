@@ -12,50 +12,92 @@ function App() {
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const downloadButton = useRef<HTMLAnchorElement>(null);
+  let data: BlobPart[] | undefined = [];
 
   const startRecording = () => {
-    const canvas = document.createElement("canvas");
-    const div = document.getElementById("my-div")!;
-    canvas.width = div.offsetWidth;
-    canvas.height = div.offsetHeight;
-    const context = canvas.getContext("2d");
+    navigator.mediaDevices
+      .getDisplayMedia({
+        video: true,
+        audio: false,
+      })
+      .then((e) => {
+        let combine = new MediaStream([...e.getTracks()]);
+        let recorder = new MediaRecorder(combine);
+        alert("recording started");
+        recorder.start();
+        data = [];
 
-    if (context) {
-      const mediaStream = canvas.captureStream();
-      const mediaRecorder = new MediaRecorder(mediaStream);
-      const chunks: BlobPart[] | undefined = [];
+        recorder.ondataavailable = (e) => {
+          data!.push(e.data);
+        };
 
-      mediaRecorder.ondataavailable = (event) => {
-        console.log("event data", event.data);
-        chunks.push(event.data);
-      };
+        recorder.onstop = () => {
+          /* Convert the recorded audio to 
+             blob type mp4 media */
+          let blobData = new Blob(data, { type: "video/mp4" });
 
-      mediaRecorder.onstop = () => {
-        const videoBlob = new Blob(chunks, { type: "video/mp4" });
-        const videoURL = URL.createObjectURL(videoBlob);
-        // videoRef.current!.src = videoURL;
+          // Convert the blob data to a url
+          let url = URL.createObjectURL(blobData);
 
-        // Download video after a delay of 10 seconds
-
-        const downloadLink = document.createElement("a");
-        downloadLink.href = videoURL;
-        downloadLink.download = "my-screen-recording.mp4";
-        downloadLink.click();
-      };
-
-      mediaRecorder.start();
-      setTimeout(() => {
-        mediaRecorder.stop();
-      }, 5000); // Record for 5 seconds
-    }
+          // Assign the url to the output video tag and anchor
+          const downloadLink = document.createElement("a");
+          downloadLink.href = url;
+          downloadLink.download = "my-screen-recording.mp4";
+          downloadLink.click();
+        };
+        setTimeout(() => {
+          alert("recording stopoed");
+          recorder.stop();
+        }, 7000);
+      });
   };
 
-  const drawCanvas = () => {
-    const canvas = canvasRef.current!;
-    const video = videoRef.current!;
-    const context = canvas.getContext("2d")!;
-    context.drawImage(video, 0, 0, canvas.width, canvas.height);
-  };
+  // const startRecording = () => {
+  //   alert("recording started");
+  //   const canvas = document.createElement("canvas");
+  //   const div = document.getElementById("my-div")!;
+  //   canvas.width = div.offsetWidth;
+  //   canvas.height = div.offsetHeight;
+  //   const context = canvas.getContext("2d");
+
+  //   if (context) {
+  //     const mediaStream = canvas.captureStream();
+  //     console.log("media stream", mediaStream);
+  //     const mediaRecorder = new MediaRecorder(mediaStream);
+  //     const chunks: BlobPart[] | undefined = [];
+
+  //     mediaRecorder.ondataavailable = (event) => {
+  //       console.log("event data", event.data);
+  //       chunks.push(event.data);
+  //     };
+
+  //     mediaRecorder.onstop = () => {
+  //       alert("recording stopped");
+  //       const videoBlob = new Blob(chunks, { type: "video/mp4" });
+  //       const videoURL = URL.createObjectURL(videoBlob);
+  //       // videoRef.current!.src = videoURL;
+
+  //       // Download video after a delay of 10 seconds
+
+  //       // const downloadLink = document.createElement("a");
+  //       // downloadLink.href = videoURL;
+  //       // downloadLink.download = "my-screen-recording.mp4";
+  //       // downloadLink.click();
+  //     };
+
+  //     mediaRecorder.start();
+  //     setTimeout(() => {
+  //       mediaRecorder.stop();
+  //     }, 5000); // Record for 5 seconds
+  //   }
+  // };
+
+  // const drawCanvas = () => {
+  //   const canvas = canvasRef.current!;
+  //   const video = videoRef.current!;
+  //   const context = canvas.getContext("2d")!;
+  //   context.drawImage(video, 0, 0, canvas.width, canvas.height);
+  // };
 
   return (
     <div className="bg-white w-screen h-screen items-center justify-center flex">
@@ -123,14 +165,14 @@ function App() {
           </div>
         </div>
         <canvas ref={canvasRef} className="h-4/6 w-1/3 rounded-3xl hidden" />
-        {/* <a
-          // href="#"
+        <a
+          href="#"
           ref={downloadButton}
           style={{ display: "none" }}
           // download="merged-video.webm"
         >
           Download merged video
-        </a> */}
+        </a>
       </div>
     </div>
   );
@@ -138,5 +180,13 @@ function App() {
 
 export default App;
 
+function async(
+  arg0: (e: any) => void
+):
+  | ((value: MediaStream) => MediaStream | PromiseLike<MediaStream>)
+  | null
+  | undefined {
+  throw new Error("Function not implemented.");
+}
 // notes: ===>  Check out using Iframe
 //==> check from recording
