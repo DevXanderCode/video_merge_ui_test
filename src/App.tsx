@@ -102,10 +102,10 @@ function App() {
   return (
     <div className="bg-white w-screen h-screen items-center justify-center flex">
       <div
-        className="flex relative  bg-slate-500  h-4/6 w-1/3 rounded-3xl"
+        className="flex relative  bg-slate-500  h-4/6 lg:w-1/3 md:w-full rounded-3xl"
         id="my-div"
       >
-        <div className="flex-1 w-1/3 h-full">
+        <div className="flex-1 lg:w-1/3 md:w-full  h-full">
           <video
             id="video1"
             // ref={video1}
