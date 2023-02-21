@@ -149,7 +149,7 @@ function App() {
           <div className="flex items-center justify-center flex-wrap">
             <div
               className="rounded-full bg-purple-600 flex items-center justify-center w-12 h-12 mr-5 cursor-pointer"
-              onClick={startRecording}
+              // onClick={startRecording}
             >
               <img src={callIcon} className="w-6" />
             </div>
@@ -157,7 +157,7 @@ function App() {
               role={"button"}
               id="download-btn"
               className="rounded-full bg-red-600 flex items-center justify-center w-12 h-12 cursor-pointer"
-              // onClick={stopRecording}
+              onClick={startRecording}
             >
               <img src={callIcon} className="w-6" />
               {/* <img src={disconnectImg} className="w-6" /> */}
